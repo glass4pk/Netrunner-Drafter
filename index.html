@@ -1,0 +1,194 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<!-- <meta name="viewport" content = "width=device-width, target-densitydpi=high-dpi, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" /> -->
+<meta name="viewport" content = "width=320; target-densitydpi=high-dpi; initial-scale=1.0; maximum-scale=1.0; user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+<meta content="telephone=no" name="format-detection" />
+<meta name="keywords" content="seokeywords"/>
+<meta name="description" content="seodescription"/>
+<title>矩阵轮抽包系统</title>
+<link rel="stylesheet" type="text/css" href="stylesheets/base.css" />
+<style>
+body{overflow: hidden;}
+body,ul,li,img{margin:0;padding:0;}
+@media screen and (min-width:240px) {
+    html, body{
+        font-size:9px;
+    }
+}
+@media screen and (min-width:320px) {
+    html, body{
+        font-size:12px;
+    }
+}
+@media screen and (min-width:480px) {
+    html, body{
+    font-size:18px;
+    }
+}
+@media screen and (min-width:640px) {
+    html, body{
+        font-size:24px;
+    }
+}
+@media screen and (min-width:960px) {
+    html, body{
+        font-size:36px;
+    }
+}
+/*
+div.imgbox{width:26.666666rem;height:40rem;overflow:hidden;margin:0 auto;}
+div.imgbox ul{clear:both;width:75rem;}
+div.imgbox ul li{float:left;width:26.666666rem;height:40rem;overflow:hidden;text-align:center;}
+div.imgbox ul li img{width:26.666666rem;height:40rem;}
+*/
+#ctrl {margin:10px auto 20px; }
+#ctrl td { padding:5px; text-align: center; }
+
+#playerList { overflow: auto; }
+#playerList li { float: left; display: block; padding:5px 10px; }
+#playerList li.current { color:#ffffff; background: #000000; } 
+
+#cardList { margin:10px auto 20px; }
+#cardList td { padding:5px 10px; border:1px solid #000000; text-align: center;}
+
+.playerCardList { border:1px solid #000000; margin:10px auto; }
+
+</style>
+</head>
+<body>
+    <table id="ctrl">
+        <tbody>
+            <tr><td>玩家人数：</td><td><input type="text" value="2" id="playerNum" /></td></tr>
+            <tr><td colspan="2"><button id="btn_createPlayer">生成玩家</button></td></tr>
+            <tr><td>卡包卡数：</td><td><input type="text" value="20" id="packSize" /></td></tr>
+            <tr><td>卡包类型：</td>
+                <td><select id="sel_packType">
+                    <option value="0">黑客</option>
+                    <option value="1">公司</option>
+                </select></td>
+            </tr>
+            <tr><td colspan="2"><button id="btn_createPack">生成卡包</button></td></tr>
+        </tbody>
+    </table>
+
+    <ul id="playerList">
+
+    </ul>
+
+    <table id="cardList">
+        <thead>
+            <tr><td>卡牌名称</td><td>派系</td><td>影响力</td><td>操作</td></tr>
+        </thead>
+        <tbody>
+
+        </tbody>
+    </table>
+   
+    
+    
+    
+</body>
+
+<script src="javascripts/zepto.min.js"></script>
+<script src="data/cards.js"></script>
+<script src="javascripts/base.js"></script>
+<script>
+
+var playerList = [];
+
+(function(){
+
+var windowW = (document.body.clientWidth > document.documentElement.clientWidth)?document.body.clientWidth:document.documentElement.clientWidth;
+var windowH = (document.body.clientHeight > document.documentElement.clientHeight)?document.body.clientHeight:document.documentElement.clientHeight;
+
+$("#btn_createPlayer").click(function(){
+    var playerNum = $("#playerNum").val();
+    //检测是否已有玩家抽了
+    if(playerNum > $("#playerList li").length){
+        //不够，要加入新的玩家
+        var html = $("#playerList").html();
+        for(var i = $("#playerList li").length; i<playerNum; i++){
+            html += '<li playerId="'+i+'">玩家'+(i+1).toString()+'</li>';
+            playerList.push({
+                playerId : i,
+                playerCardList : []
+            });
+        }
+        $("#playerList").html(html);
+        $("#playerList li").first().addClass("current").siblings("li").removeClass("current");
+    }
+    else {
+        //已有玩家，继续添加
+
+    }
+    
+});
+
+$("#btn_createPack").click(function(){
+    //实例化一个轮抽包
+    var packSize = $("#packSize").val();
+    var packType = $('#sel_packType').val();
+    alert(packType)
+    var pack = $.Pack("#cardList",{
+          packSize:packSize,
+          packType:packType
+    });
+
+    //清除界面上的卡表
+    $(".playerCardList").remove();
+    //重置玩家1开始抽
+    $("#playerList li").first().addClass("current").siblings("li").removeClass("current");
+
+    //加载轮抽包内容
+    pack.listCards();
+    //绑定轮抽包事件
+
+    $(".deleteCard").click(function(){
+        //当前卡
+        var cardName = $(this).parents("tr").find(".td_cardName").html();
+        //当前玩家
+        var playerId = $("#playerList li.current").attr("playerId");
+        playerList[playerId].playerCardList.push(cardName);
+        //删除这张卡
+        $(this).parents("tr").remove();
+        if($(".deleteCard").length > 0){
+            //还可以抽，选择下一个玩家
+            var totalPlayer = $("#playerList li").length;
+            playerId++;
+            if(playerId % totalPlayer == 0){
+                playerId = 0;
+            }
+            $("#playerList li[playerId='"+playerId+"']").addClass("current").siblings("li").removeClass("current");
+        }
+        else {
+            //显示每个玩家的卡片
+            for(var i=0; i<playerList.length;i++){
+                var html = "<ul id='player_"+i+"' class='playerCardList'><li>玩家"+(i+1).toString()+"卡表：</li>";
+                var playerCardList = playerList[i].playerCardList;
+                for(var j=0; j<playerCardList.length; j++){
+                    var cardName = playerCardList[j];
+                    html += '<li>'+cardName+'</li>';
+                }
+                html += '</ul>'
+                $("body").append(html);
+            }
+        }
+        
+    });
+});
+
+
+
+
+
+
+})();
+
+</script>
+
+</html>
