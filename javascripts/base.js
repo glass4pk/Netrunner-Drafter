@@ -66,8 +66,9 @@ $.extend(Pack.prototype,{
         for(var i=0; i < cardList.length; i++){
             html += '<tr cardId="' + i + '">'
                 + '<td class="td_cardName">' + cardList[i].cardName + '</td>'
-                + '<td>' + cardList[i].group + '</td>'
-                + '<td>' + cardList[i].force + '</td>'
+                + '<td>' + cardList[i].cardType + '</td>'
+                //+ '<td>' + cardList[i].group + '</td>'
+                //+ '<td>' + cardList[i].force + '</td>'
                 + '<td><button class="deleteCard">选择</button></td>'
                 + '</tr>'
         }
